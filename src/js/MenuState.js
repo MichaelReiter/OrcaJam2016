@@ -1,4 +1,4 @@
-const MenuState = {
+export const MenuState = {
   preload: () => {
 
   },
