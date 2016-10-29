@@ -8,8 +8,9 @@ const minifyHTML = require('gulp-minify-html');
 const babel      = require('gulp-babel');
 
 const jsSrc = [
-  './src/js/*.js',
-  './src/js/main.js'
+  './src/js/main.js',
+  './src/js/*.js'
+  
 ];
 const jsDst     = './build/js';
 const libSrc    = './src/lib/*.js';

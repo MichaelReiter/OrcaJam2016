@@ -8,7 +8,7 @@ const MenuState = {
   },
 
   create: function() {
-
+	game.state.start('Gameplay');
   },
 
   update: function() {

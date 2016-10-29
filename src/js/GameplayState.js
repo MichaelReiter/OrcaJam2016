@@ -1,6 +1,20 @@
+let sprite;
+let bullets;
+let veggies;
+let cursors;
+
+let bulletTime = 0;
+let bullet;
+
+let ballCollision;
+let bulletCollision;
+let objectCollision;
+
 const GameplayState = {
   preload: function() {
-
+	game.load.image('phaser', 'img/bubble.png');
+	game.load.image('object', 'img/blue.png');
+	game.load.image('bullet','img/bullet0.png');
   },
 
   load: function() {
@@ -8,10 +22,118 @@ const GameplayState = {
   },
 
   create: function() {
+  	game.stage.backgroundColor = '#2d2d2d';
 
+    //  This will check Group vs. Group collision (bullets vs. veggies!)
+    game.physics.startSystem(Phaser.Physics.P2JS);
+    veggies = game.add.group();
+    veggies.enableBody = true;
+    veggies.physicsBodyType = Phaser.Physics.ARCADE;
+
+    for (var i = 0; i < 20; i++)
+    {
+        var c = veggies.create(game.world.randomX, Math.random() * 500, 'object', game.rnd.integerInRange(0, 36));
+        c.name = 'object' + i;
+        c.body.velocity.x = game.rnd.integerInRange(-200, 200);
+		c.body.velocity.y = game.rnd.integerInRange(-200, 200);
+    }
+    veggies.setAll('body.collideWorldBounds', true);
+    veggies.setAll('body.bounce.x', 1);
+    veggies.setAll('body.bounce.y', 1);
+
+
+    bullets = game.add.group();
+    bullets.enableBody = true;
+    bullets.physicsBodyType = Phaser.Physics.ARCADE;
+
+
+    for (var i = 0; i < 20; i++)
+    {
+        var b = bullets.create(0, 0, 'bullet');
+        b.name = 'bullet' + i;
+        b.exists = false;
+        b.visible = false;
+        b.checkWorldBounds = true;
+        b.events.onOutOfBounds.add(resetBullet, this);
+    }
+
+    sprite = game.add.sprite(400, 550, 'phaser');
+    game.physics.enable(sprite, Phaser.Physics.ARCADE);
+    sprite.body.collideWorldBounds = true;
+
+    cursors = game.input.keyboard.createCursorKeys();
+    game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
   },
 
   update: function() {
 
+    //  As we don't need to exchange any velocities or motion we can the 'overlap' check instead of 'collide'
+    game.physics.arcade.overlap(bullets, veggies, collisionHandler, null, this);
+    game.physics.arcade.collide(veggies);
+    game.physics.arcade.overlap(sprite, veggies, loseLife, null, this);
+
+
+    sprite.body.velocity.x = 0;
+    sprite.body.velocity.y = 0;
+
+    if (cursors.left.isDown)
+    {
+        sprite.body.velocity.x = -600;
+    }
+     if (cursors.right.isDown)
+    {
+        sprite.body.velocity.x = 600;
+    }
+         if (cursors.up.isDown)
+    {
+        sprite.body.velocity.y = -600;
+    }
+         if (cursors.down.isDown)
+    {
+        sprite.body.velocity.y = 600;
+    }
+
+
+    if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
+    {
+        fireBullet();
+    }
+
   }
+};
+
+
+function fireBullet () {
+
+    if (game.time.now > bulletTime)
+    {
+        bullet = bullets.getFirstExists(false);
+
+        if (bullet)
+        {
+            bullet.reset(sprite.x + 6, sprite.y - 8);
+            bullet.body.velocity.y = -300;
+            bulletTime = game.time.now + 150;
+        }
+    }
+
+};
+
+//  Called if the bullet goes out of the screen
+function resetBullet (bullet) {
+
+    bullet.kill();
+
+};
+
+//  Called if the bullet hits one of the veg sprites
+function collisionHandler (bullet, veg) {
+
+    bullet.kill();
+    veg.kill();
+
+};
+
+function loseLife(sprite, veg) {
+	console.log("reached here");
 };
