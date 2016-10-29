@@ -1,17 +1,17 @@
 const GameplayState = {
-  preload: () => {
+  preload: function() {
 
   },
 
-  load: () => {
+  load: function() {
 
   },
 
-  create: () => {
+  create: function() {
 
   },
 
-  update: () => {
+  update: function() {
 
   }
 };
