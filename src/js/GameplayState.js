@@ -10,11 +10,17 @@ let ballCollision;
 let bulletCollision;
 let objectCollision;
 
+let tween;
+let text;
+let logo;
+let method = 0;
+
 const GameplayState = {
   preload: function() {
 	game.load.image('phaser', 'img/bubble.png');
 	game.load.image('object', 'img/blue.png');
 	game.load.image('bullet','img/bullet0.png');
+	game.load.image('logo', 'img/boss1.png');
   },
 
   load: function() {
@@ -63,6 +69,10 @@ const GameplayState = {
 
     cursors = game.input.keyboard.createCursorKeys();
     game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
+  
+
+  	tweenText(game);
+
   },
 
   update: function() {
@@ -136,4 +146,24 @@ function collisionHandler (bullet, veg) {
 
 function loseLife(sprite, veg) {
 	console.log("reached here");
+};
+
+function tweenText(game) {
+	logo = game.add.sprite(game.world.centerX,game.world.centerY, 'logo');
+    logo.anchor.set(0.5);
+    var logo_tween = game.add.tween(logo);
+    logo_tween.from( { y: -200 }, 2000, Phaser.Easing.Bounce.Out, true);
+    // logo.scale.setTo(scale  * 3);
+	logo_tween.onComplete.add(moveOut, logo_tween);
+};
+
+function moveOut(){
+	// this.to({x: -this.game.world.width / 2}, 1200, null, true);
+	// this.onComplete.removeAll();
+	// this.onComplete.forget();
+	// this.target.visible = false;
+	this.onComplete.dispose();
+	console.log(this.target);
+	this.target.kill();
+
 };
