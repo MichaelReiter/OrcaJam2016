@@ -25,15 +25,28 @@ let gravityDrop = 0;
 
 let bmpText;
 
+let objectLeftText;
 
+let activeVeggies;
+
+let smartVeggies = true;
+
+let smartVeggiesText;
+
+let button;
+
+let isWon = false;
+let isLost = false;
 const GameplayState = {
   preload: function() {
 	game.load.image('phaser', 'img/bubble.png');
 	game.load.image('object', 'img/blue.png');
 	game.load.image('bullet','img/bullet0.png');
-	game.load.image('logo', 'img/boss1.png');
+	game.load.image('win', 'img/win.png');
+    game.load.image('lose', 'img/lose.png');
 	game.load.image('heart', 'img/heart.png');
 	game.load.bitmapFont('desyrel', 'img/desyrel.png', 'img/desyrel.xml');
+    game.load.spritesheet('button', 'img/disable.png', 193, 71);
 
   },
 
@@ -79,6 +92,7 @@ const GameplayState = {
         b.visible = false;
         b.checkWorldBounds = true;
         b.events.onOutOfBounds.add(resetBullet, this);
+        b.anchor.set(0.5, 0.5);
     }
 
     sprite = game.add.sprite(400, 550, 'phaser');
@@ -91,6 +105,8 @@ const GameplayState = {
 
   	// tweenText(game);  	
   	bmpText = game.add.bitmapText(100, 50, 'desyrel', 'Another\nRandom Game', 64);
+    activeVeggies = veggies.children.length;
+    objectLeftText = game.add.bitmapText(900, 25, 'desyrel', 'Pumpkins left: ' + activeVeggies);
 
   },
 
@@ -102,8 +118,15 @@ const GameplayState = {
     game.physics.arcade.overlap(sprite, veggies, loseLife, startCounting, this);
     checkBullet();
     checkGravityDrop();
+    objectLeftText.setText('Pumpkins left: ' + activeVeggies);
     sprite.body.velocity.x = 0;
     sprite.body.velocity.y = 0;
+
+    if(activeVeggies == 0 && isWon != true){
+        isWon = true;
+        logo = game.add.sprite(game.world.centerX,game.world.centerY, 'win');
+        tweenText();
+    }
 
     if (cursors.left.isDown)
     {
@@ -126,6 +149,9 @@ const GameplayState = {
     if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
     {
         fireBullet();
+    }
+    if(game.time.totalElapsedSeconds() > 3 && smartVeggies){
+        removePumpkinsEvasion();
     }
 
   }
@@ -154,47 +180,61 @@ function resetBullet (bullet) {
 		bullet.rotation = 0;
 	}
     bullet.kill();
-    gravityDrop++;
     return
 
 };
 
 //  Called if the bullet hits one of the veg sprites
 function collisionHandler (bullet, veg) {
-	if(bulletReturnList.indexOf(bullet) != -1){
-		bullet.rotation = 0;
-	}	
-    bullet.kill();
-    veg.kill();
-    gravityDrop++;
+    if(smartVeggies){
+        const angle = game.math.angleBetween(veg.body.x, veg.body.y, bullet.body.x, bullet.body.y);
+        const  ratio= 10;
+        console.log(angle);
+        if(bullet.body.x > veg.body.x) {
+            veg.body.x -= ratio * angle;
+        } else{
+            veg.body.x += ratio * angle;
+        }
+        veg.body.y -= ratio * angle;
+    } else{
+        if(bulletReturnList.indexOf(bullet) != -1){
+            bullet.rotation = 0;
+        }   
+        bullet.kill();
+        veg.kill();
+        gravityDrop++;
+        activeVeggies--;
+    }
+
 };
 
 function loseLife(sprite, veg) {
-	if(hearts.children.length == 0) {
-		console.log("Game over");
+	if(hearts.children.length == 0 && !isLost) {
+        isLost = true;
+        logo = game.add.sprite(game.world.centerX,game.world.centerY, 'lose');
+		tweenText();
 	} else{
 		var length = hearts.children.length;
 		hearts.children[length - 1].kill();
 		hearts.remove(hearts.children[length-1]);
 		veg.kill();
+        activeVeggies--;
 		sprite.body.x = 400;
 		sprite.body.y = 550;
 	}
 };
 
-function tweenText(game) {
-	logo = game.add.sprite(game.world.centerX,game.world.centerY, 'logo');
+function tweenText() {
     logo.anchor.set(0.5);
     var logo_tween = game.add.tween(logo);
     logo_tween.from( { y: -200 }, 2000, Phaser.Easing.Bounce.Out, true);
     // logo.scale.setTo(scale  * 3);
-	logo_tween.onComplete.add(moveOut, logo_tween);
+	// logo_tween.onComplete.add(moveOut, logo_tween);
 };
 
 function moveOut(){
 	this.onComplete.dispose();
 	this.target.kill();
-
 };
 
 function startCounting(){
@@ -216,7 +256,7 @@ function checkBullet(){
 				bulletReturnList.push(bullets.children[i]);
 			} 
 		};
-		if(bulletCount > 1) {
+		if(bulletCount >= 12) {
 			console.log("reached here");
 			bulletReturn = true;
 			for (var i = 0; i < bulletReturnList.length; i++) {
@@ -227,10 +267,11 @@ function checkBullet(){
 				newObject.anchor.set(0.5, 0.5);
 				objectCustomize();
 				resetBullet(bulletReturnList[i]);
-				console.log("created an object");
+				activeVeggies++;
 			};
-			bulletReturnList = [];
-		}
+			
+		} 
+        bulletReturnList = [];
 	}
 };
 
@@ -248,6 +289,7 @@ function checkGravityDrop(){
 	if(gravityDrop > 5){
 		game.time.events.add(2000, dropGravity, this);
 		bmpText.setText("Gravity drops\nin" + game.time.events.duration.toFixed(0) / 1000);
+        setOriginalText();
 	}
 };
 
@@ -274,6 +316,21 @@ function objectCustomize(){
 	veggies.setAll('body.collideWorldBounds', true);
     veggies.setAll('body.bounce.x', 1);
     veggies.setAll('body.bounce.y', 1);
-    veggies.setAll('width', 32);
-    veggies.setAll('height', 32);
+    veggies.setAll('width', 48);
+    veggies.setAll('height', 48);
+}
+
+function removePumpkinsEvasion(){
+    bmpText.setText("Remove Pumpkins Evasion\nin: " + game.time.events.duration.toFixed(0) / 1000);
+    game.time.events.add(4000, disableSmartVeggies, this);
+    console.log("removing Pumpkins");
+}
+
+function disableSmartVeggies(){
+    smartVeggies = false;
+    setOriginalText();
+}
+
+function setOriginalText(){
+    bmpText.setText('Another\nRandom Game');
 }
