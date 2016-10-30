@@ -18,6 +18,8 @@ let hearts;
 
 let lifeTimer = 0;
 
+let bulletReturn = false;
+
 const GameplayState = {
   preload: function() {
 	game.load.image('phaser', 'img/bubble.png');
@@ -46,16 +48,20 @@ const GameplayState = {
     veggies.enableBody = true;
     veggies.physicsBodyType = Phaser.Physics.ARCADE;
 
+    //OPPONENTS
     for (var i = 0; i < 20; i++)
     {
         var c = veggies.create(game.world.randomX, Math.random() * 500, 'object', game.rnd.integerInRange(0, 36));
         c.name = 'object' + i;
         c.body.velocity.x = game.rnd.integerInRange(-100, 100);
 		c.body.velocity.y = game.rnd.integerInRange(-70, 100);
+		c.anchor.set(0.5, 0.5);	
     }
     veggies.setAll('body.collideWorldBounds', true);
     veggies.setAll('body.bounce.x', 1);
     veggies.setAll('body.bounce.y', 1);
+    veggies.setAll('width', 32);
+    veggies.setAll('height', 32);
 
 
     bullets = game.add.group();
@@ -92,7 +98,7 @@ const GameplayState = {
     game.physics.arcade.overlap(bullets, veggies, collisionHandler, null, this);
     game.physics.arcade.collide(veggies);
     game.physics.arcade.overlap(sprite, veggies, loseLife, startCounting, this);
-
+    checkBullet();
 
     sprite.body.velocity.x = 0;
     sprite.body.velocity.y = 0;
@@ -162,6 +168,9 @@ function loseLife(sprite, veg) {
 		var length = hearts.children.length;
 		hearts.children[length - 1].kill();
 		hearts.remove(hearts.children[length-1]);
+		veg.kill();
+		sprite.body.x = 400;
+		sprite.body.y = 550;
 	}
 };
 
@@ -175,10 +184,6 @@ function tweenText(game) {
 };
 
 function moveOut(){
-	// this.to({x: -this.game.world.width / 2}, 1200, null, true);
-	// this.onComplete.removeAll();
-	// this.onComplete.forget();
-	// this.target.visible = false;
 	this.onComplete.dispose();
 	this.target.kill();
 
@@ -192,3 +197,13 @@ function startCounting(){
 		return false;
 	}
 };
+
+function checkBullet(){
+	let bulletCount = 0;
+	for (var i = 0; i < bullets.children.length; i++) {
+		if (bullets.children[i].exists == true){
+			bulletCount++; 
+		} 
+	};
+	if(bulletCount > 5) bulletReturn = true;
+}
