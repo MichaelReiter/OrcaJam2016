@@ -14,6 +14,7 @@ let tween;
 let text;
 let logo;
 let method = 0;
+let hearts;
 
 const GameplayState = {
   preload: function() {
@@ -21,6 +22,9 @@ const GameplayState = {
 	game.load.image('object', 'img/blue.png');
 	game.load.image('bullet','img/bullet0.png');
 	game.load.image('logo', 'img/boss1.png');
+	game.load.image('heart', 'img/heart.png');
+	game.load.bitmapFont('desyrel', 'img/desyrel.png', 'img/desyrel.xml');
+
   },
 
   load: function() {
@@ -29,6 +33,10 @@ const GameplayState = {
 
   create: function() {
   	game.stage.backgroundColor = '#2d2d2d';
+  	hearts = game.add.group();
+  	for(var i = 0; i <= 2; i++){
+  		var heart = hearts.create(i * 35 + 50, 25, 'heart');
+  	}
 
     //  This will check Group vs. Group collision (bullets vs. veggies!)
     game.physics.startSystem(Phaser.Physics.P2JS);
@@ -40,8 +48,8 @@ const GameplayState = {
     {
         var c = veggies.create(game.world.randomX, Math.random() * 500, 'object', game.rnd.integerInRange(0, 36));
         c.name = 'object' + i;
-        c.body.velocity.x = game.rnd.integerInRange(-200, 200);
-		c.body.velocity.y = game.rnd.integerInRange(-200, 200);
+        c.body.velocity.x = game.rnd.integerInRange(-100, 100);
+		c.body.velocity.y = game.rnd.integerInRange(-70, 100);
     }
     veggies.setAll('body.collideWorldBounds', true);
     veggies.setAll('body.bounce.x', 1);
@@ -71,7 +79,9 @@ const GameplayState = {
     game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
   
 
-  	tweenText(game);
+  	tweenText(game);  	
+  	bmpText = game.add.bitmapText(100, 50, 'desyrel', 'Phaser & Pixi\nrocking!', 64);
+
 
   },
 
@@ -122,7 +132,7 @@ function fireBullet () {
         if (bullet)
         {
             bullet.reset(sprite.x + 6, sprite.y - 8);
-            bullet.body.velocity.y = -300;
+            bullet.body.velocity.y = -400;
             bulletTime = game.time.now + 150;
         }
     }
@@ -145,7 +155,13 @@ function collisionHandler (bullet, veg) {
 };
 
 function loseLife(sprite, veg) {
-	console.log("reached here");
+	if(hearts.children.length == 0) {
+		console.log("Game over");
+	} else{
+		var length = hearts.children.length;
+		hearts.children[length - 1].kill();
+		hearts.remove(hearts.children[length-1]);
+	}
 };
 
 function tweenText(game) {
@@ -163,7 +179,6 @@ function moveOut(){
 	// this.onComplete.forget();
 	// this.target.visible = false;
 	this.onComplete.dispose();
-	console.log(this.target);
 	this.target.kill();
 
 };
