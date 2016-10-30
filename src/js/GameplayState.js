@@ -16,6 +16,8 @@ let logo;
 let method = 0;
 let hearts;
 
+let lifeTimer = 0;
+
 const GameplayState = {
   preload: function() {
 	game.load.image('phaser', 'img/bubble.png');
@@ -34,7 +36,7 @@ const GameplayState = {
   create: function() {
   	game.stage.backgroundColor = '#2d2d2d';
   	hearts = game.add.group();
-  	for(var i = 0; i <= 2; i++){
+  	for(var i = 0; i <= 7; i++){
   		var heart = hearts.create(i * 35 + 50, 25, 'heart');
   	}
 
@@ -80,8 +82,7 @@ const GameplayState = {
   
 
   	tweenText(game);  	
-  	bmpText = game.add.bitmapText(100, 50, 'desyrel', 'Phaser & Pixi\nrocking!', 64);
-
+  	bmpText = game.add.bitmapText(100, 50, 'desyrel', 'Another\nRandom Game', 64);
 
   },
 
@@ -90,7 +91,7 @@ const GameplayState = {
     //  As we don't need to exchange any velocities or motion we can the 'overlap' check instead of 'collide'
     game.physics.arcade.overlap(bullets, veggies, collisionHandler, null, this);
     game.physics.arcade.collide(veggies);
-    game.physics.arcade.overlap(sprite, veggies, loseLife, null, this);
+    game.physics.arcade.overlap(sprite, veggies, loseLife, startCounting, this);
 
 
     sprite.body.velocity.x = 0;
@@ -133,7 +134,7 @@ function fireBullet () {
         {
             bullet.reset(sprite.x + 6, sprite.y - 8);
             bullet.body.velocity.y = -400;
-            bulletTime = game.time.now + 150;
+            bulletTime = game.time.now + 100;
         }
     }
 
@@ -181,4 +182,13 @@ function moveOut(){
 	this.onComplete.dispose();
 	this.target.kill();
 
+};
+
+function startCounting(){
+	if(game.time.now > lifeTimer ){
+		lifeTimer = game.time.now + 350;
+		return true;
+	}else{
+		return false;
+	}
 };
