@@ -19,6 +19,12 @@ let hearts;
 let lifeTimer = 0;
 
 let bulletReturn = false;
+let bulletReturnList = [];
+
+let gravityDrop = 0;
+
+let bmpText;
+
 
 const GameplayState = {
   preload: function() {
@@ -51,17 +57,13 @@ const GameplayState = {
     //OPPONENTS
     for (var i = 0; i < 20; i++)
     {
-        var c = veggies.create(game.world.randomX, Math.random() * 500, 'object', game.rnd.integerInRange(0, 36));
+        var c = veggies.create(game.world.randomX, Math.random() * 500, 'object');
         c.name = 'object' + i;
         c.body.velocity.x = game.rnd.integerInRange(-100, 100);
 		c.body.velocity.y = game.rnd.integerInRange(-70, 100);
 		c.anchor.set(0.5, 0.5);	
     }
-    veggies.setAll('body.collideWorldBounds', true);
-    veggies.setAll('body.bounce.x', 1);
-    veggies.setAll('body.bounce.y', 1);
-    veggies.setAll('width', 32);
-    veggies.setAll('height', 32);
+    objectCustomize();
 
 
     bullets = game.add.group();
@@ -69,7 +71,7 @@ const GameplayState = {
     bullets.physicsBodyType = Phaser.Physics.ARCADE;
 
 
-    for (var i = 0; i < 20; i++)
+    for (var i = 0; i < 30; i++)
     {
         var b = bullets.create(0, 0, 'bullet');
         b.name = 'bullet' + i;
@@ -87,7 +89,7 @@ const GameplayState = {
     game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
   
 
-  	tweenText(game);  	
+  	// tweenText(game);  	
   	bmpText = game.add.bitmapText(100, 50, 'desyrel', 'Another\nRandom Game', 64);
 
   },
@@ -99,7 +101,7 @@ const GameplayState = {
     game.physics.arcade.collide(veggies);
     game.physics.arcade.overlap(sprite, veggies, loseLife, startCounting, this);
     checkBullet();
-
+    checkGravityDrop();
     sprite.body.velocity.x = 0;
     sprite.body.velocity.y = 0;
 
@@ -148,17 +150,23 @@ function fireBullet () {
 
 //  Called if the bullet goes out of the screen
 function resetBullet (bullet) {
-
+	if(bulletReturnList.indexOf(bullet) != -1){
+		bullet.rotation = 0;
+	}
     bullet.kill();
+    gravityDrop++;
+    return
 
 };
 
 //  Called if the bullet hits one of the veg sprites
 function collisionHandler (bullet, veg) {
-
+	if(bulletReturnList.indexOf(bullet) != -1){
+		bullet.rotation = 0;
+	}	
     bullet.kill();
     veg.kill();
-
+    gravityDrop++;
 };
 
 function loseLife(sprite, veg) {
@@ -199,11 +207,73 @@ function startCounting(){
 };
 
 function checkBullet(){
-	let bulletCount = 0;
-	for (var i = 0; i < bullets.children.length; i++) {
-		if (bullets.children[i].exists == true){
-			bulletCount++; 
-		} 
+	if(!bulletReturn){
+		let bulletCount = 0;
+		
+		for (var i = 0; i < bullets.children.length; i++) {
+			if (bullets.children[i].exists == true){
+				bulletCount++; 
+				bulletReturnList.push(bullets.children[i]);
+			} 
+		};
+		if(bulletCount > 1) {
+			console.log("reached here");
+			bulletReturn = true;
+			for (var i = 0; i < bulletReturnList.length; i++) {
+				objectMoveToward(bulletReturnList[i], sprite);
+				var newObject = veggies.create(bulletReturnList[i].body.x, bulletReturnList[i].body.y,'object');
+				newObject.body.velocity.x = bulletReturnList[i].body.x;
+				newObject.body.velocity.y = bulletReturnList[i].body.y;
+				newObject.anchor.set(0.5, 0.5);
+				objectCustomize();
+				resetBullet(bulletReturnList[i]);
+				console.log("created an object");
+			};
+			bulletReturnList = [];
+		}
+	}
+};
+
+function objectMoveToward(from,to){
+	from.rotation = -game.physics.arcade.angleToXY(from,to.position.x, to.position.y);
+	from.body.velocity.y = - 800 * from.rotation;
+	if(from.body.position.x > to.position.x){
+		from.body.velocity.x =  800 * from.rotation;
+	} else{
+		from.body.velocity.x =  -800 * from.rotation;
+	}
+};
+
+function checkGravityDrop(){
+	if(gravityDrop > 5){
+		game.time.events.add(2000, dropGravity, this);
+		bmpText.setText("Gravity drops\nin" + game.time.events.duration.toFixed(0) / 1000);
+	}
+};
+
+function dropGravity(){
+	bmpText.destroy();
+	for (var i = 0; i < veggies.children.length; i++) {
+		veggies.children[i].body.gravity.y = 8000;
 	};
-	if(bulletCount > 5) bulletReturn = true;
+	game.time.events.removeAll();
+	game.time.events.add(2000, removeGravity, this);
+};
+
+function removeGravity(){
+	for (var i = 0; i < veggies.children.length; i++) {
+		veggies.children[i].body.allowGravity = false;
+		veggies.children[i].body.velocity.y = -500;
+	};
+	console.log("stopped Gravity");
+	game.time.events.removeAll();
+
+};
+
+function objectCustomize(){
+	veggies.setAll('body.collideWorldBounds', true);
+    veggies.setAll('body.bounce.x', 1);
+    veggies.setAll('body.bounce.y', 1);
+    veggies.setAll('width', 32);
+    veggies.setAll('height', 32);
 }
